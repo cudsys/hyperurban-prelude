@@ -1,0 +1,34 @@
+{
+    "name": "a_thief",
+    "description": "A thief suddenly draws a knife from their pocket and points it at you. \"Gimme something or I'll just take your life!\"",
+    "intensity": 1,
+    "skippable": false,
+    "choices": [
+        {
+            "text": "Run for it!",
+            "outcomes": [
+                {
+                    "rate": 30,
+                    "effect": "next_room",
+                    "text": "You run for it!"
+                },
+                {
+                    "rate": 70,
+                    "effect": "instakill",
+                    "text": "Long story short, running away didn't work out."       
+                }
+            ]
+        },
+        {
+            "text": "Surrender a random item",
+            "outcomes": [
+                {
+                    "rate": 100,
+                    "effect": "inv_remove_random",
+                    "text": "You quickly surrender a random item to the theif. They run away."
+                }
+            ]
+        }
+    ]  
+}
+
