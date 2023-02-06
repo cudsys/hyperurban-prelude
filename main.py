@@ -113,6 +113,8 @@ print("done! loaded {} rooms".format(len(jsonrooms)))
 
 
 # initialize game variables
+game = None
+
 # game variables:
 # current room number
 # intensity level
@@ -209,7 +211,8 @@ class Outcome:
 
 class Game:
     def __init__(self):
-        self.current_room = 0       # current room
+        self.goal = None            # win condition
+        self.current_room = None    # current room
         self.rooms = 0              # rooms cleared
         self.intensity_level = 1    # intensity starts at 1
         # new player object with the temporary name "Player"
@@ -217,10 +220,8 @@ class Game:
         self.player = Player("Player")
 
     def next_room(self):
-        self.current_room += 1
-        if self.current_room > self.rooms:
-            self.current_room = 0
         self.rooms += 1
+        self.current_room = None
 
     # generateRoom() is a function that creates a room object using data from a random room from rooms.json. the same process applies for the choices and outcomes of the room
     def generateRoom(self):
@@ -264,9 +265,14 @@ class Game:
         print("\n\nYou survived {} rooms before you died with {} karma.".format(self.rooms, self.player.kr))
 
 
-    
-print("alright lets do this shit\n\n\n\n")
-print("""
+
+
+
+
+
+
+def mainmenu():
+    print("""
     __                                     __              
    / /_  __  ______  ___  _______  _______/ /_  ____ _____ 
   / __ \/ / / / __ \/ _ \/ ___/ / / / ___/ __ \/ __ `/ __ \\
@@ -279,31 +285,99 @@ print("""
 1. start
 2. about
 3. quit
-
 """)
 
-while True:
-    match input():
-        case "1":
-            break
-        case "2":
-            print("""
+    while True:
+        match input():
+            case "1":
+                modeselect()
+            case "2":
+                print("""
 this game serves as a precursor to hyperurban, a much bigger and more story rich game.
 
 hyperurban prelude was made to experiment with the game's main mechanic of traversing the game world in moments.
-            """)
-        case "3":
-            exit()
+                """)
+            case "3":
+                exit()
+            case _:
+                print("not an option")
+
+
+def modeselect():
+    print("""
+
+
+
+
+
+
+S-S-S-S-SELECT YOUR MODE!!!
+
+1. endless mode
+a never-ending stream of moments, one after another. how far can you get?
+
+2. samaritan mode (coming soon!)
+reach a goal amount of karma as fast as possible.
+
+3. ironman mode (coming soon!)
+no inventory! how long can you last without items?
+
+
+0. back to main menu
+    """)
+
+    while True:
+        match input():
+            case "1":
+                difficultyselect()
+            case "2":
+                print("coming soon!")
+            case "3":
+                print("coming soon!")
+            case "0":
+                mainmenu()    
+            case _:
+                print("not an option")
+
+def difficultyselect():
+    print("""
+    
+
+
+
+S-S-S-S-SELECT YOUR DIFFICULTY!!!
+
+1. normal: the way the game is meant to be played
+below difficulties are coming soon!
+
+2. hard: more difficult moments and more strict losing conditions
+3. insane: for masochists whose dominatrix just so happens to be lady luck
+4. ballistic: intensity starts at 10, 1 health, -49 karma. good luck! :)
+
+0. back to mode selection
+    """)
+
+    match input():
+        case "1":
+            game = Game()
+            game_loop()
+        case "0":
+            modeselect()
         case _:
             print("not an option")
 
 
 
+def game_loop():
+    while game.player.hp > 0 and game.player.kr > -50:
+        if game.current_room == None:
+            game.generateRoom()
+
+
+    
 
 
 
+print("alright lets do this shit\n\n\n\n")
 
-
-
-
-
+mainmenu()
