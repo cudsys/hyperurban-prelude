@@ -1,6 +1,6 @@
 {
-    "name": "a_thief 2 electric boogaloo",
-    "description": "This is another moment.",
+    "name": "room_name",
+    "description": "You find yourself in a moment.",
     "intensity": 1,
     "skippable": false,
     "choices": [

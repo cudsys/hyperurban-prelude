@@ -79,6 +79,7 @@ print("alright...fingers crossed!!!")
 # "praise #": praises the player for # kr. kr cannot exceed 50.
 # "shun #": shuns the player for # kr. kr can exceed 0. (negative karma)
 # "instakill": instantly kills the player (like "hurt #", but sets the player's hp to -99 instead of 0)
+# "gameover": causes a game over immediately, regardless of health or karma
 # "cancel": instantly kills the player's ego (like "shun #", but sets the player's karma to -50)
 # "inv_add x": adds x items to the player's inventory
 # "inv_remove x": removes x items from the player's inventory if possible
@@ -94,26 +95,16 @@ import math
 import json
 print("done!")
 # each room is stored in a json file in the rooms folder
-# import all the json files in the rooms folder and store them in a list called jsonrooms
+# import all the json files in the rooms folder and store them in a list called jsonrooms except for template.json
 print("loading rooms...")
 jsonrooms = []
 for filename in os.listdir("rooms"):
-    if filename.endswith(".json"):
+    if filename.endswith(".json") and filename!= "template.json":
         jsonrooms.append(json.load(open("rooms/" + filename, "r")))
 print("done! loaded {} rooms".format(len(jsonrooms)))
 
-
-
-
-
-
-
-
-
-
-
 # initialize game variables
-game = None
+
 
 # game variables:
 # current room number
@@ -137,7 +128,7 @@ game = None
 class Player:
     def __init__(self, name):
         self.name = name        # name
-        self.hp = 50            # health
+        self.hp = 10            # health
         self.kr = 0             # karma
         self.inventory = []     # inventory
 
@@ -162,13 +153,13 @@ class Player:
 
     def instakill(self):
         self.hp = -99
+        print("Mortis.")
 
     def cancel(self):
         self.kr = -50
+        print("Shame on you!")
 
 
-
-# room class
 class Room:
     def __init__(self, name, description, skippable, choices):
         self.name = name
@@ -176,19 +167,23 @@ class Room:
         self.skippable = skippable
         self.choices = choices
 
-
 class Choice:
     def __init__(self, text, outcomes):
         self.text = text
         self.outcomes = outcomes
 
+    # chooseOutcome() is a function that chooses a random outcome from a list of outcomes
+    # however, the chance of an outcome being chosen is determined by the outcome's rate
+    # we can use random.choices() to weight the outcomes by their rate
     def chooseOutcome(self):
-        chosen = random.randint(0, len(self.outcomes) - 1)
-        chosen_outcome = self.outcomes[chosen]
-        chosen_outcome.rate = chosen_outcome.rate / 100
-        chosen_outcome.effect = chosen_outcome.effect.lower()
-        chosen_outcome.text = chosen_outcome.text.lower()
-        return chosen_outcome
+        # put the rates of the outcomes into a list
+        rates = []
+        for outcome in self.outcomes:
+            rates.append(outcome.rate)
+        # use random.choices() to pick an outcome, using the rates list as weights
+        choice = random.choices(self.outcomes, cum_weights=rates, k=1)[0]
+        return choice
+
     
     # function that generates a string to display the choice's text along with the choice's success rate
     # example:
@@ -197,17 +192,11 @@ class Choice:
         output = self.text + " ({}%)".format(self.outcomes[0].rate*100)
         return output
 
-
-
-
-
 class Outcome:
     def __init__(self, rate, effect, text):
         self.rate = rate
         self.effect = effect
         self.text = text
-
-    # cause() is a function that takes the effect string, parses it and runs the appropriate function
 
 class Game:
     def __init__(self):
@@ -237,7 +226,7 @@ class Game:
                 new_outcome = Outcome(outcome["rate"], outcome["effect"], outcome["text"])
                 new_outcome.rate = new_outcome.rate / 100
                 new_outcome.effect = new_outcome.effect.lower()
-                new_outcome.text = new_outcome.text.lower()
+                new_outcome.text = new_outcome.text
                 new_choice.outcomes.append(new_outcome)
 
             new_room.choices.append(new_choice)
@@ -246,7 +235,7 @@ class Game:
 
     # game_over() is a function that ends the game and displays your results
     def game_over(self):
-        print("GAME OVER!!")
+        print("\n\n\nGAME OVER!!")
         # cause of death (physical death or ego death)
         # if player hp is 0, physical death
         # if player hp is -10 or lower, overkill
@@ -262,13 +251,34 @@ class Game:
         else:
             print("But...you're still alive? Interesting...")
         
-        print("\n\nYou survived {} rooms before you died with {} karma.".format(self.rooms, self.player.kr))
+        print("\n\nYou survived {} rooms before you died with {} karma.\n".format(self.rooms, self.player.kr))
+        input("Press enter to continue...")
+        mainmenu()
 
 
+    def parseOutcome(self, text):
+        text = text.split(" ")
+        match text[0]:
+            case "heal":
+                self.player.heal(int(text[1]))
+            case "hurt":
+                self.player.hurt(int(text[1]))
+            case "praise":
+                self.player.praise(int(text[1]))
+            case "shun":
+                self.player.shun(int(text[1]))
+            case "instakill":
+                self.player.instakill()
+            case "cancel":
+                self.player.cancel()
+            case _:
+                print("Nothing happened... (invalid effect?)")
+        # if any of the losing conditions are met, game_over() is called
+        if self.player.kr <= -50 or self.player.hp <= 0:
+            self.game_over()
 
-
-
-
+                
+            
 
 
 def mainmenu():
@@ -288,7 +298,7 @@ def mainmenu():
 """)
 
     while True:
-        match input():
+        match input("> "):
             case "1":
                 modeselect()
             case "2":
@@ -301,7 +311,6 @@ hyperurban prelude was made to experiment with the game's main mechanic of trave
                 exit()
             case _:
                 print("not an option")
-
 
 def modeselect():
     print("""
@@ -327,7 +336,7 @@ no inventory! how long can you last without items?
     """)
 
     while True:
-        match input():
+        match input("> "):
             case "1":
                 difficultyselect()
             case "2":
@@ -357,9 +366,8 @@ below difficulties are coming soon!
 0. back to mode selection
     """)
 
-    match input():
+    match input("> "):
         case "1":
-            game = Game()
             game_loop()
         case "0":
             modeselect()
@@ -367,11 +375,57 @@ below difficulties are coming soon!
             print("not an option")
 
 
-
 def game_loop():
+    game = Game()
     while game.player.hp > 0 and game.player.kr > -50:
-        if game.current_room == None:
-            game.generateRoom()
+        error_msg = "What would you like to do? > "
+        state = "choosing"
+        game.current_room = game.generateRoom()
+        
+        # print room number and description
+        while game.current_room is not None:
+            print("\n\n\n\n\n\n\n\n\n\n\n\n")
+            match state:
+                case "choosing":
+                     print("Moment {0}\n\n{1}".format(game.rooms + 1, game.current_room.description))
+
+                     i = 1
+                     for choice in game.current_room.choices:
+                        print("{}. ".format(i) + choice.generateText())
+                        i += 1
+                case "result":
+                    print("\n\n\n{0}".format(current_outcome.text))
+                    game.parseOutcome(current_outcome.effect)
+                    input("Press enter to continue...")
+                    state = "choosing"
+                    game.next_room()
+                    break
+                    
+
+
+
+           
+            
+            # print player stats
+            print("\n{0}       {1}/10 HP | {2} KR".format(game.player.name, game.player.hp, game.player.kr))
+            # accept player input
+            
+            current_choice = input(error_msg)
+            # check if the choice is between 1 and the length of the room choices
+            if current_choice == "":
+                error_msg = "That is not a valid choice. Please try again."
+            elif int(current_choice) > len(game.current_room.choices) or int(current_choice) < 1:
+                error_msg = "That is not a valid choice. Please try again. > "
+                
+            else:
+                # the selected choice is indexed at current_choice - 1
+                current_outcome = game.current_room.choices[int(current_choice) - 1].chooseOutcome()
+                state = "result"
+
+                
+            
+
+
 
 
     
