@@ -1,4 +1,5 @@
 print("alright...fingers crossed!!!")
+
 # endless text adventure game
 # player progresses through an endless amount of rooms
 # player has a name, health (hp), karma (kr) and an inventory (inv) array
@@ -89,9 +90,6 @@ print("alright...fingers crossed!!!")
 print("loading modules...")
 import random
 import os
-import sys
-import time
-import math
 import json
 print("done!")
 # each room is stored in a json file in the rooms folder
@@ -129,14 +127,15 @@ class Player:
     def __init__(self, name):
         self.name = name        # name
         self.hp = 10            # health
+        self.maxhp = 10         # max health
         self.kr = 0             # karma
         self.inventory = []     # inventory
 
     def heal(self, amount):
         self.hp += amount
         print("+{} health".format(amount))
-        if self.hp > 10:
-            self.hp = 10
+        if self.hp > self.maxhp:
+            self.hp = self.maxhp
             print("...but you're maxed out!")
 
     def hurt(self, amount):
@@ -181,7 +180,7 @@ class Choice:
         for outcome in self.outcomes:
             rates.append(outcome.rate)
         # use random.choices() to pick an outcome, using the rates list as weights
-        choice = random.choices(self.outcomes, cum_weights=rates, k=1)[0]
+        choice = random.choices(self.outcomes, weights=rates, k=1)[0]
         return choice
 
     
@@ -241,7 +240,7 @@ class Game:
         # if player hp is -10 or lower, overkill
         # if player hp is -50 or lower, ego death\
         # if none apply, display a special message
-        if self.player.hp == 0:
+        if self.player.hp <= 0:
             print("You died!")
         elif self.player.hp <= -10:
             print("You got destroyed!")
@@ -251,7 +250,7 @@ class Game:
         else:
             print("But...you're still alive? Interesting...")
         
-        print("\n\nYou survived {} rooms before you died with {} karma.\n".format(self.rooms, self.player.kr))
+        print("\n\nYou survived {} moments before dying with {} karma.\n".format(self.rooms, self.player.kr))
         input("Press enter to continue...")
         mainmenu()
 
@@ -377,6 +376,10 @@ below difficulties are coming soon!
 
 def game_loop():
     game = Game()
+    game.player.name = input("What is your name? > ")
+    if game.player.name == "":
+        game.player.name = "Hailey"
+
     while game.player.hp > 0 and game.player.kr > -50:
         error_msg = "What would you like to do? > "
         state = "choosing"
@@ -396,6 +399,7 @@ def game_loop():
                 case "result":
                     print("\n\n\n{0}".format(current_outcome.text))
                     game.parseOutcome(current_outcome.effect)
+                    print("\n{0}       {1}/{3} HP | {2} KR".format(game.player.name, game.player.hp, game.player.kr, game.player.maxhp))
                     input("Press enter to continue...")
                     state = "choosing"
                     game.next_room()
@@ -407,13 +411,13 @@ def game_loop():
            
             
             # print player stats
-            print("\n{0}       {1}/10 HP | {2} KR".format(game.player.name, game.player.hp, game.player.kr))
+            print("\n{0}       {1}/{3} HP | {2} KR".format(game.player.name, game.player.hp, game.player.kr, game.player.maxhp))
             # accept player input
             
             current_choice = input(error_msg)
             # check if the choice is between 1 and the length of the room choices
             if current_choice == "":
-                error_msg = "That is not a valid choice. Please try again."
+                error_msg = "That is not a valid choice. Please try again. > "
             elif int(current_choice) > len(game.current_room.choices) or int(current_choice) < 1:
                 error_msg = "That is not a valid choice. Please try again. > "
                 
@@ -422,16 +426,8 @@ def game_loop():
                 current_outcome = game.current_room.choices[int(current_choice) - 1].chooseOutcome()
                 state = "result"
 
-                
-            
-
-
-
-
-    
-
-
 
 print("alright lets do this shit\n\n\n\n")
 
+# fun fact: this is where the game actually starts
 mainmenu()
